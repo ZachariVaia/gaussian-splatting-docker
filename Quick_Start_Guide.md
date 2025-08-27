@@ -1,55 +1,79 @@
-Gaussian Splatting (Docker) — Quick Start Guide
+Gaussian Splatting (Docker) — Quick Start Guide ✨
 
-This README gives you a clean, SuGaR-style path to build the Docker image and run the Vanilla 3D Gaussian Splatting pipeline with a single script. All results land in one outputs/ folder on your host.
+
+
+
+
+
+
+
+A workflow to build the Docker image and run the Vanilla 3D Gaussian Splatting pipeline with a single script.
+All results are written into one outputs/ folder on your host.
+
+Note on fonts & colors: Markdown rendering (fonts, bold, colors) depends on your platform. On GitHub/GitLab/VS Code, headings, bold text, and these colored badges will display nicely. Code blocks are syntax-highlighted automatically.
+
+TL;DR
+# 1) Clone
+git clone https://github.com/ZachariVaia/gaussian-splatting-docker.git
+cd gaussian-splatting-docker
+
+# 2) Build image (with sudo)
+sudo docker build -t gaussian-splatting-docker:latest .
+
+# 3) Run pipeline (example)
+chmod +x run_gs_pipeline.sh
+./run_gs_pipeline.sh bonsai \
+  --data_root /path/to/your/data_root \
+  --out_root  "$PWD/outputs" \
+  --image     gaussian-splatting-docker:latest \
+  --eval
 
 Requirements
 
 Git
 
-Docker (NVIDIA drivers + nvidia-container-toolkit for GPU)
+Docker (with NVIDIA drivers + nvidia-container-toolkit for GPU)
 
-Check installations:
+Quick checks:
 
 git --version
 docker --version
 
 
-GPU users: verify nvidia-smi works on host and Docker sees GPUs (docker run --rm --gpus all nvidia/cuda:12.1.1-base nvidia-smi).
+GPU checks:
+
+nvidia-smi
+sudo docker run --rm --gpus all nvidia/cuda:12.1.1-base nvidia-smi
 
 1) Clone the Repository
-
-Create a working folder (e.g., in your home), clone this repo, and make the script executable:
-
-cd ~
-mkdir -p gaussian-splatting-docker && cd gaussian-splatting-docker
-
-# If this repo is remote:
-git clone <this-repo-url> .
-# otherwise copy your files here
+git clone https://github.com/ZachariVaia/gaussian-splatting-docker.git
+cd gaussian-splatting-docker
 
 chmod +x run_gs_pipeline.sh
-mkdir -p outputs   # optional — the script also creates it
+mkdir -p outputs   # optional — the script creates it if missing
 
 
-The outputs/ folder is where all pipeline results will be stored.
+Expected data layout:
 
-2) Build the Docker Image
+/path/to/your/data_root/
+  <SCENE>/
+    images/        # if you DON'T have COLMAP yet
+    sparse/0/      # if you ALREADY have COLMAP
+
+2) Build the Docker Image (with sudo)
 
 From the repo root (where the Dockerfile lives):
 
-docker build -t gaussian-splatting-docker:latest .
+sudo docker build -t gaussian-splatting-docker:latest .
 
 
--t gaussian-splatting-docker:latest gives the image a tag you’ll reference in the script.
-
-Use your own tag if you prefer (and pass it via --image to the script).
+The tag gaussian-splatting-docker:latest is what you pass to the script with --image.
 
 3) Run the Pipeline
 
-You run one script; it takes care of mounting data/outputs, COLMAP conversion (if needed), training, rendering, and metrics.
+The script handles mounting data/outputs, optional COLMAP conversion, training, rendering, and (with --eval) metrics.
 
-A) Run inside Docker (recommended)
-# Example: MipNeRF360 "bonsai"
+Example (MipNeRF360 bonsai)
 ./run_gs_pipeline.sh bonsai \
   --data_root /path/to/your/data_root \
   --out_root  "$PWD/outputs" \
@@ -57,31 +81,51 @@ A) Run inside Docker (recommended)
   --eval
 
 
-If your scene has only images/, the script auto-runs convert.py (COLMAP).
+Notes
 
-If sparse/0/ exists, it skips conversion.
+If only images/ exists → runs convert.py (COLMAP) automatically.
 
-For NeRF Synthetic, add -w (--white-bg).
+If sparse/0/ exists → conversion is skipped.
 
+For NeRF Synthetic, add -w (or --white-bg).
 
+Script Flags (Quick Reference)
 
-4) Output Location
+-n, --iters N — training iterations (default: 30000)
 
-All results are stored under:
+--data_root PATH — host data root (default: ./data)
+
+--out_root PATH — single host outputs folder (default: ./outputs)
+
+--image TAG — Docker image tag (default: gaussian-splatting-docker)
+
+--dockerfile DIR — path with Dockerfile for auto-build if image is missing
+
+--build — force a fresh build before running
+
+--eval — also run render.py & metrics.py after training
+
+-w, --white-bg — white background (NeRF Synthetic)
+
+--no-colmap — never run convert.py even if sparse/0 is missing
+
+Output Location
+
+Everything is written to:
 
 <repo>/outputs/<SCENE>/
 
 
-Plus persistent caches/configs in:
+Persistent folders used by the pipeline:
 
-outputs/.cache/   # torch extensions, etc.
-outputs/.config/  # config files (e.g., conda)
-outputs/.conda/   # conda home (if used)
+outputs/.cache/    # PyTorch extensions, etc.
+outputs/.config/   # app/config (e.g., conda)
+outputs/.conda/    # conda home (if used)
+outputs/.repo_gs/  # read-only copy of the repo pulled from the image
 
 Troubleshooting
 
-Docker permission denied
-Add your user to the docker group:
+Docker “permission denied”
 
 sudo usermod -aG docker $USER
 newgrp docker
@@ -89,28 +133,49 @@ docker info
 
 
 Image not found
-Build it first:
 
-docker build -t gaussian-splatting-docker:latest .
+sudo docker build -t gaussian-splatting-docker:latest .
 
 
-Or pass the correct tag via --image.
+Or pass the correct tag with --image.
 
 “Scene not found”
-Check your --data_root and ensure --data_root/<SCENE> exists.
+Ensure --data_root/<SCENE> exists and is spelled correctly.
 
 No results appear
-Use an absolute --out_root or "$PWD/outputs" and re-run. The script prints all the mounts it uses.
+Use an absolute --out_root or "$PWD/outputs" and re-run.
+The script prints the mounts it uses.
 
 GPU not used
-Install nvidia-container-toolkit and run with a recent NVIDIA driver. The script will use --gpus all if available.
+Install nvidia-container-toolkit, ensure recent NVIDIA drivers, and verify docker run --gpus all works.
+The script automatically uses --gpus all when available.
 
 Conda/libtinfo warnings
-Harmless. The script isolates configs/caches under /app and continues.
+Harmless. Configs/caches are sandboxed under /app and the script continues.
 
-Quick Commands
-# Build image
-docker build -t gaussian-splatting-docker:latest .
+(Optional) Live Remote Viewer with SIBR
+
+If you built SIBR_viewers into the image:
+
+Expose the training port and pass flags to train.py:
+
+Port mapping: -p 6009:6009
+
+Flags: --ip 0.0.0.0 --port 6009
+
+Run the viewer in Docker with X11:
+
+xhost +local:docker
+sudo docker run --rm -it --gpus all --network host \
+  -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -v /path/to/data:/app/data \
+  gaussian-splatting-docker:latest \
+  SIBR_remoteGaussian_app --ip 127.0.0.1 --port 6009 -s /app/data/bonsai
+
+Quick Commands Recap
+# Build image (with sudo)
+sudo docker build -t gaussian-splatting-docker:latest .
 
 # Run pipeline (example)
 ./run_gs_pipeline.sh bonsai \
@@ -125,7 +190,3 @@ docker build -t gaussian-splatting-docker:latest .
   --out_root  "$PWD/outputs" \
   --image     gaussian-splatting-docker:latest \
   --eval -w
-
-Done!
-
-You’re ready to train and evaluate Gaussian Splatting in Docker with a single command. 🚀
