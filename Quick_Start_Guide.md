@@ -102,6 +102,16 @@ outputs/.config/   # app/config (e.g., conda)
 outputs/.conda/    # conda home (if used)
 outputs/.repo_gs/  # read-only copy of the repo pulled from the image
 
+## Custom data with colmap
+```
+~/gaussian-splatting-docker$ sudo docker run --rm -it --gpus all -w /app/gaussian_splatting   -v "/home/ilias/thanos:/app/data"   -v "$PWD/outputs:/app/output"   -v "$PWD/outputs/.repo_gs:/app/gaussian_splatting:ro"   --user "$(id -u)":"$(id -g)" -e HOME=/app gaussian-splatting-docker:latest   bash -lc 'python convert.py -s /app/data/realistic-temple --skip_matching'
+
+
+./run_gs_pipeline.sh realistic-temple   --data_root /home/ilias/thanos/   --out_root "$PWD/outputs"   --image gaussian-splatting-docker:latest   --eval
+
+```
+
+
 ## Troubleshooting
 
 ## Docker “permission denied”

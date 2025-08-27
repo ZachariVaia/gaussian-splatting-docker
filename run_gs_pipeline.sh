@@ -205,25 +205,52 @@ $DOCKER run --rm -it $GPU_FLAG -w "$IN_HOME" \
     echo '[i] Out  : $IN_OUT/'\"\$SCENE\"
     echo '[i] Repo : ' \$(pwd)
 
-    # Convert/COLMAP (conditional)
-    if [ \"\$NOCL\" != \"1\" ] && [ ! -d \"$IN_DATA/\$SCENE/sparse/0\" ]; then
-      if [ -d \"$IN_DATA/\$SCENE/images\" ]; then
-        echo '[*] No sparse/0 → running convert.py (COLMAP)...'
-        python convert.py -s \"$IN_DATA/\$SCENE\"
+    SPARSE=\"$IN_DATA/\$SCENE/sparse/0\"
+    INPUT_DIR=\"$IN_DATA/\$SCENE/input\"
+
+    # Βρες αν ήδη υπάρχει αρχικό point cloud (.ply) από convert.py
+    PLY_CANDIDATES=\$(ls \"$IN_DATA/\$SCENE\"/*point*cloud*.ply \
+                         \"$IN_DATA/\$SCENE\"/points3D.ply \
+                         \"$IN_DATA/\$SCENE\"/point_cloud/*/*.ply 2>/dev/null || true)
+
+    if [ \"\$NOCL\" != \"1\" ]; then
+      if [ -z \"\$PLY_CANDIDATES\" ]; then
+        # Εξασφάλισε ότι υπάρχει input/: αν έχεις μόνο images/, κάνε symlink
+        if [ ! -d \"\$INPUT_DIR\" ]; then
+          if [ -d \"$IN_DATA/\$SCENE/images\" ]; then
+            ln -s \"$IN_DATA/\$SCENE/images\" \"\$INPUT_DIR\" 2>/dev/null || true
+          fi
+        fi
+
+        if [ -d \"\$INPUT_DIR\" ]; then
+          echo \"[*] No initial .ply → running convert.py (expects \$SCENE/input)…\"
+          python convert.py -s \"$IN_DATA/\$SCENE\"
+        else
+          echo \"[!] Provide raw images in: $IN_DATA/\$SCENE/input\"; exit 1
+        fi
       else
-        echo '[!] Missing both sparse/0 and images/. Provide COLMAP or images.'; exit 1
+        echo \"[*] Found initial .ply → skipping convert.\"
       fi
     else
-      echo '[*] Using existing COLMAP or skipping.'
+      echo \"[*] Skipping COLMAP/convert (NOCL=1).\"
+    fi
+
+    # Μετά το convert πρέπει να υπάρχει .ply
+    PLY_CANDIDATES=\$(ls \"$IN_DATA/\$SCENE\"/*point*cloud*.ply \
+                         \"$IN_DATA/\$SCENE\"/points3D.ply \
+                         \"$IN_DATA/\$SCENE\"/point_cloud/*/*.ply 2>/dev/null || true)
+    if [ -z \"\$PLY_CANDIDATES\" ]; then
+      echo \"[!] Conversion failed: no initial .ply found. Check \$SCENE/input and COLMAP.\"; exit 1
     fi
 
     TRAIN_FLAGS=''
-    [ \"\$EVAL\" = \"1\" ] && TRAIN_FLAGS=\"\$TRAIN_FLAGS --eval\"
+    [ \"\$EVAL\"  = \"1\" ] && TRAIN_FLAGS=\"\$TRAIN_FLAGS --eval\"
     [ \"\$WHITE\" = \"1\" ] && TRAIN_FLAGS=\"\$TRAIN_FLAGS -w\"
 
     echo '[*] Training...'
     python train.py -s \"$IN_DATA/\$SCENE\" -m \"$IN_OUT/\$SCENE\" --iterations \"\$ITERS\" \$TRAIN_FLAGS
   "
+
 
 ########################################
 # STEP 4: Render (+ metrics if --eval)
