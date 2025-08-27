@@ -36,7 +36,7 @@ chmod +x run_gs_pipeline.sh
 ```
 
 
-##Quick checks:
+## Quick checks:
 
 Expected data layout:
 
@@ -46,7 +46,7 @@ Expected data layout:
     sparse/0/      # if you ALREADY have COLMAP
 
 
-Run the Pipeline
+## Run the Pipeline
 
 The script handles mounting data/outputs, optional COLMAP conversion, training, rendering, and (with --eval) metrics.
 
@@ -59,7 +59,7 @@ Example (MipNeRF360 bonsai)
   --eval
 ```
 
-Notes
+## Notes
 
 If only images/ exists → runs convert.py (COLMAP) automatically.
 
@@ -88,7 +88,7 @@ Script Flags (Quick Reference)
 
 --no-colmap — never run convert.py even if sparse/0 is missing
 ```
-Output Location
+### Output Location
 
 Everything is written to:
 
@@ -102,9 +102,9 @@ outputs/.config/   # app/config (e.g., conda)
 outputs/.conda/    # conda home (if used)
 outputs/.repo_gs/  # read-only copy of the repo pulled from the image
 
-Troubleshooting
+## Troubleshooting
 
-Docker “permission denied”
+## Docker “permission denied”
 ```bash
 sudo usermod -aG docker $USER
 newgrp docker
@@ -112,28 +112,28 @@ docker info
 ```
 
 
-Image not found
+## Image not found
 ```bash
 sudo docker build -t gaussian-splatting-docker:latest .
 ```
 
 Or pass the correct tag with --image.
 
-“Scene not found”
+## “Scene not found”
 Ensure --data_root/<SCENE> exists and is spelled correctly.
 
 No results appear
 Use an absolute --out_root or "$PWD/outputs" and re-run.
 The script prints the mounts it uses.
 
-GPU not used
+## GPU not used
 Install nvidia-container-toolkit, ensure recent NVIDIA drivers, and verify docker run --gpus all works.
 The script automatically uses --gpus all when available.
 
 Conda/libtinfo warnings
 Harmless. Configs/caches are sandboxed under /app and the script continues.
 
-(Optional) Live Remote Viewer with SIBR
+## (Optional) Live Remote Viewer with SIBR
 
 If you built SIBR_viewers into the image:
 
@@ -143,7 +143,7 @@ Port mapping: -p 6009:6009
 
 Flags: --ip 0.0.0.0 --port 6009
 
-Run the viewer in Docker with X11:
+## Run the viewer in Docker with X11:
 ```bash
 xhost +local:docker
 sudo docker run --rm -it --gpus all --network host \
@@ -153,11 +153,11 @@ sudo docker run --rm -it --gpus all --network host \
   gaussian-splatting-docker:latest \
   SIBR_remoteGaussian_app --ip 127.0.0.1 --port 6009 -s /app/data/bonsai
 ```
-Quick Commands Recap
-# Build image (with sudo)
+## Quick Commands Recap
+## Build image (with sudo)
 sudo docker build -t gaussian-splatting-docker:latest .
 
-# Run pipeline (example)
+## Run pipeline (example)
 ```
 ./run_gs_pipeline.sh bonsai \
   --data_root /path/to/data_root \
@@ -165,7 +165,7 @@ sudo docker build -t gaussian-splatting-docker:latest .
   --image     gaussian-splatting-docker:latest \
   --eval
 ```
-# NeRF Synthetic (white background)
+## NeRF Synthetic (white background)
 ```
 ./run_gs_pipeline.sh lego \
   --data_root /path/to/nerf_synthetic \
