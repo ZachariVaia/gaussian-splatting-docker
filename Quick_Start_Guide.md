@@ -1,57 +1,42 @@
-Gaussian Splatting (Docker) — Quick Start Guide ✨
+#Gaussian Splatting (Docker) — Quick Start Guide ✨
 
 
+## Requirements
 
+* **Git**
+* **Docker** (with NVIDIA drivers + `nvidia-container-toolkit` if you want GPU support)
 
+Check installations:
 
+```bash
+git --version
+docker --version
+```
 
-
-
-A workflow to build the Docker image and run the Vanilla 3D Gaussian Splatting pipeline with a single script.
-All results are written into one outputs/ folder on your host.
-
-Note on fonts & colors: Markdown rendering (fonts, bold, colors) depends on your platform. On GitHub/GitLab/VS Code, headings, bold text, and these colored badges will display nicely. Code blocks are syntax-highlighted automatically.
-
-TL;DR
-# 1) Clone
-git clone https://github.com/ZachariVaia/gaussian-splatting-docker.git
+---
+## 1) Clone
+```bash
+git clone https://github.com/ZachariVaia/gaussian-splatting-docker.git --recursive
 cd gaussian-splatting-docker
-
-# 2) Build image (with sudo)
+```
+## 2) Build image (with sudo)
+```bash
 sudo docker build -t gaussian-splatting-docker:latest .
+```
 
-# 3) Run pipeline (example)
+## 3) Run pipeline (example)
+```bash
+mkdir -p outputs   # optional — the script creates it if missing
 chmod +x run_gs_pipeline.sh
 ./run_gs_pipeline.sh bonsai \
   --data_root /path/to/your/data_root \
   --out_root  "$PWD/outputs" \
   --image     gaussian-splatting-docker:latest \
   --eval
-
-Requirements
-
-Git
-
-Docker (with NVIDIA drivers + nvidia-container-toolkit for GPU)
-
-Quick checks:
-
-git --version
-docker --version
+```
 
 
-GPU checks:
-
-nvidia-smi
-sudo docker run --rm --gpus all nvidia/cuda:12.1.1-base nvidia-smi
-
-1) Clone the Repository
-git clone https://github.com/ZachariVaia/gaussian-splatting-docker.git
-cd gaussian-splatting-docker
-
-chmod +x run_gs_pipeline.sh
-mkdir -p outputs   # optional — the script creates it if missing
-
+##Quick checks:
 
 Expected data layout:
 
@@ -60,26 +45,19 @@ Expected data layout:
     images/        # if you DON'T have COLMAP yet
     sparse/0/      # if you ALREADY have COLMAP
 
-2) Build the Docker Image (with sudo)
 
-From the repo root (where the Dockerfile lives):
-
-sudo docker build -t gaussian-splatting-docker:latest .
-
-
-The tag gaussian-splatting-docker:latest is what you pass to the script with --image.
-
-3) Run the Pipeline
+Run the Pipeline
 
 The script handles mounting data/outputs, optional COLMAP conversion, training, rendering, and (with --eval) metrics.
 
 Example (MipNeRF360 bonsai)
+```bash
 ./run_gs_pipeline.sh bonsai \
   --data_root /path/to/your/data_root \
   --out_root  "$PWD/outputs" \
   --image     gaussian-splatting-docker:latest \
   --eval
-
+```
 
 Notes
 
@@ -90,6 +68,7 @@ If sparse/0/ exists → conversion is skipped.
 For NeRF Synthetic, add -w (or --white-bg).
 
 Script Flags (Quick Reference)
+```bash
 
 -n, --iters N — training iterations (default: 30000)
 
@@ -108,7 +87,7 @@ Script Flags (Quick Reference)
 -w, --white-bg — white background (NeRF Synthetic)
 
 --no-colmap — never run convert.py even if sparse/0 is missing
-
+```
 Output Location
 
 Everything is written to:
@@ -126,16 +105,17 @@ outputs/.repo_gs/  # read-only copy of the repo pulled from the image
 Troubleshooting
 
 Docker “permission denied”
-
+```bash
 sudo usermod -aG docker $USER
 newgrp docker
 docker info
+```
 
 
 Image not found
-
+```bash
 sudo docker build -t gaussian-splatting-docker:latest .
-
+```
 
 Or pass the correct tag with --image.
 
@@ -164,7 +144,7 @@ Port mapping: -p 6009:6009
 Flags: --ip 0.0.0.0 --port 6009
 
 Run the viewer in Docker with X11:
-
+```bash
 xhost +local:docker
 sudo docker run --rm -it --gpus all --network host \
   -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 \
@@ -172,21 +152,24 @@ sudo docker run --rm -it --gpus all --network host \
   -v /path/to/data:/app/data \
   gaussian-splatting-docker:latest \
   SIBR_remoteGaussian_app --ip 127.0.0.1 --port 6009 -s /app/data/bonsai
-
+```
 Quick Commands Recap
 # Build image (with sudo)
 sudo docker build -t gaussian-splatting-docker:latest .
 
 # Run pipeline (example)
+```
 ./run_gs_pipeline.sh bonsai \
   --data_root /path/to/data_root \
   --out_root  "$PWD/outputs" \
   --image     gaussian-splatting-docker:latest \
   --eval
-
+```
 # NeRF Synthetic (white background)
+```
 ./run_gs_pipeline.sh lego \
   --data_root /path/to/nerf_synthetic \
   --out_root  "$PWD/outputs" \
   --image     gaussian-splatting-docker:latest \
   --eval -w
+  ```
