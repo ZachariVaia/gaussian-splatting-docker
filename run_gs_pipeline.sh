@@ -7,16 +7,16 @@ set -euo pipefail
 SCENE_NAME="${1:-}"
 shift || true
 
-# Defaults (φορητά)
+# Defaults (portable)
 ITERS=${ITERS:-30000}
 EVAL=0
 WHITE_BG=0
 NO_COLMAP=0
 
-# Host paths (ένας κοινός outputs φάκελος)
+# Host paths (one common outputs folder)
 HOST_DATA_ROOT="${DATA_ROOT:-$(pwd)/data}"
 HOST_OUT_ROOT="${OUT_ROOT:-$(pwd)/outputs}"
-# Host cache για το repo (επίμονο, εκτός image)
+# Host cache for the repo (persistent, outside the image)
 HOST_REPO_CACHE="${HOST_REPO_CACHE:-$HOST_OUT_ROOT/.repo_gs}"
 
 # Docker image & build
@@ -93,7 +93,7 @@ if ! $DOCKER info >/dev/null 2>&1; then
   if command -v sudo >/dev/null 2>&1 && sudo docker info >/dev/null 2>&1; then
     DOCKER="sudo docker"
   else
-    echo "[!] Δεν έχω πρόσβαση στο Docker daemon. Τρέξε: sudo usermod -aG docker \$USER && κάνε relogin"
+    echo "[!] No access to Docker daemon. Run: sudo usermod -aG docker \$USER && relogin"
     exit 1
   fi
 fi
@@ -146,7 +146,7 @@ fi
 # STEP 2.5: Export repo from image → host cache (once)
 ########################################
 echo "[*] STEP 2.5: Preparing host repo cache..."
-# Αν το cache είναι άδειο, αντιγράφουμε από το image (τρέχουμε ως root για πρόσβαση στο /root)
+# If the cache is empty, copy the repo from the image (run as root to access /root)
 if [ -z "$(ls -A "$HOST_REPO_CACHE" 2>/dev/null || true)" ]; then
   $DOCKER run --rm -it \
     -v "$HOST_REPO_CACHE:/mnt/repo_host" \
@@ -159,7 +159,7 @@ if [ -z "$(ls -A "$HOST_REPO_CACHE" 2>/dev/null || true)" ]; then
       cp -a \"\$SRC/.\" /mnt/repo_host/
       echo '[+] Repo exported to host cache'
     "
-  # Φτιάξε ιδιοκτησίες στον host
+  # Fix ownership on host
   if command -v sudo >/dev/null 2>&1; then
     sudo chown -R "$(id -u)":"$(id -g)" "$HOST_REPO_CACHE"
   fi
@@ -226,7 +226,7 @@ $DOCKER run --rm -it $GPU_FLAG -w "$IN_HOME" \
   "
 
 ########################################
-# STEP 4: Render (+ metrics αν --eval)
+# STEP 4: Render (+ metrics if --eval)
 ########################################
 echo "[*] STEP 4: Rendering (and metrics if --eval)..."
 $DOCKER run --rm -it $GPU_FLAG -w "$IN_HOME" \
