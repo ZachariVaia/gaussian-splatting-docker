@@ -103,6 +103,18 @@ outputs/.conda/    # conda home (if used)
 outputs/.repo_gs/  # read-only copy of the repo pulled from the image
 
 ## Custom data with colmap
+If you have your own COLMAP dataset without undistortion (e.g., using OPENCV camera), you can try to just run the last part of the script: Put the images in input and the COLMAP info in a subdirectory distorted:
+
+<location>
+|---input
+|   |---<image 0>
+|   |---<image 1>
+|   |---...
+|---distorted
+    |---database.db
+    |---sparse
+        |---0
+            |---...
 ```
 ~/gaussian-splatting-docker$ sudo docker run --rm -it --gpus all -w /app/gaussian_splatting   -v "/home/ilias/thanos:/app/data"   -v "$PWD/outputs:/app/output"   -v "$PWD/outputs/.repo_gs:/app/gaussian_splatting:ro"   --user "$(id -u)":"$(id -g)" -e HOME=/app gaussian-splatting-docker:latest   bash -lc 'python convert.py -s /app/data/realistic-temple --skip_matching'
 
