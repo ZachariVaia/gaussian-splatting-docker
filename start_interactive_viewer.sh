@@ -11,9 +11,9 @@ if ! command -v python &> /dev/null; then
     exit 1
 fi
 
-# Check if Flask is installed
-if ! python -c "import flask" 2>/dev/null; then
-    echo "📦 Installing Flask..."
+# Check if Flask and Pillow are installed
+if ! python -c "import flask" 2>/dev/null || ! python -c "from PIL import Image" 2>/dev/null; then
+    echo "📦 Installing Flask and Pillow..."
     pip install flask pillow --quiet
 fi
 

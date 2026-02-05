@@ -13,11 +13,18 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check if Flask is installed
+REM Check if Flask and Pillow are installed
 python -c "import flask" >nul 2>&1
-if errorlevel 1 (
-    echo 📦 Installing Flask...
+set FLASK_INSTALLED=%errorlevel%
+python -c "from PIL import Image" >nul 2>&1
+set PILLOW_INSTALLED=%errorlevel%
+
+if %FLASK_INSTALLED% neq 0 (
+    echo 📦 Installing Flask and Pillow...
     pip install flask pillow --quiet
+) else if %PILLOW_INSTALLED% neq 0 (
+    echo 📦 Installing Pillow...
+    pip install pillow --quiet
 )
 
 REM Check if PyTorch is available
@@ -31,7 +38,7 @@ if errorlevel 1 (
 
 REM Check CUDA availability
 python -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
-if errorlevel 0 (
+if not errorlevel 1 (
     echo ✅ CUDA is available
 ) else (
     echo ⚠️  Warning: CUDA is not available. GPU acceleration will not work.

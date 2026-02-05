@@ -41,7 +41,7 @@ class SimpleCamera:
         self.zfar = zfar
         self.world_view_transform = world_view_transform
         self.full_proj_transform = full_proj_transform
-        self.camera_center = self.world_view_transform.inverse()[3, :3]
+        self.camera_center = self.world_view_transform.inverse()[:3, 3]
 
 def create_view_matrix(camera_position, look_at, up):
     """Create a view matrix from camera parameters"""
@@ -235,4 +235,6 @@ if __name__ == '__main__':
     
     print("Starting Interactive Gaussian Splatting Viewer...")
     print("Open your browser and navigate to: http://localhost:5000")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    
+    # Note: debug=False for security. Set to True only for development.
+    app.run(host='0.0.0.0', port=5000, debug=False)
