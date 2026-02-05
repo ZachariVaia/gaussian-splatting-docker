@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Gaussian Splatting Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .controls-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 400px;
+            overflow-y: auto;
+            max-height: calc(100vh - 40px);
+        }
+        
+        .viewer-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        
+        .gaussian-control {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        .gaussian-control:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .gaussian-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        
+        .gaussian-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .gaussian-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .value-display {
+            min-width: 45px;
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+            font-size: 14px;
+        }
+        
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .camera-controls {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .camera-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .render-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .render-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .render-button:active {
+            transform: translateY(0);
+        }
+        
+        .render-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #renderCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .auto-render-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3e0;
+            border-radius: 6px;
+        }
+        
+        .auto-render-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .auto-render-toggle label {
+            cursor: pointer;
+            color: #e65100;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls-panel">
+            <h1>🎨 Gaussian Splatting</h1>
+            <p class="subtitle">Interactive 3D Gaussian Visualization</p>
+            
+            <div id="gaussianControls"></div>
+            
+            <div class="camera-controls">
+                <div class="camera-title">📷 Camera Controls</div>
+                
+                <div class="control-group">
+                    <label class="control-label">Camera Distance</label>
+                    <div class="slider-group">
+                        <input type="range" id="cameraDistance" min="2" max="10" step="0.1" value="5">
+                        <span class="value-display" id="cameraDistanceValue">5.0</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Camera Angle (Horizontal)</label>
+                    <div class="slider-group">
+                        <input type="range" id="cameraAngleH" min="-180" max="180" step="5" value="30">
+                        <span class="value-display" id="cameraAngleHValue">30°</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Camera Angle (Vertical)</label>
+                    <div class="slider-group">
+                        <input type="range" id="cameraAngleV" min="-45" max="45" step="5" value="20">
+                        <span class="value-display" id="cameraAngleVValue">20°</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="auto-render-toggle">
+                <input type="checkbox" id="autoRender" checked>
+                <label for="autoRender">Auto-render on change</label>
+            </div>
+            
+            <button class="render-button" id="renderButton">🎬 Render Gaussians</button>
+            
+            <div class="info">
+                <strong>💡 Tip:</strong> Adjust position, scale, opacity and color for each Gaussian to see real-time rasterization results!
+            </div>
+        </div>
+        
+        <div class="viewer-panel">
+            <h1>Rendered Output</h1>
+            <p class="subtitle">Real-time Gaussian Splatting Visualization</p>
+            <div class="canvas-container">
+                <img id="renderCanvas" src="" alt="Rendered output will appear here">
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <div>Rendering...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Default Gaussian parameters
+        const defaultGaussians = [
+            {
+                position: [-1.0, 0.0, 0.0],
+                scale: 0.5,
+                opacity: 0.8,
+                color: [255, 0, 0]  // Red
+            },
+            {
+                position: [1.0, 0.0, 0.0],
+                scale: 0.5,
+                opacity: 0.8,
+                color: [0, 255, 0]  // Green
+            },
+            {
+                position: [0.0, 1.0, 0.0],
+                scale: 0.5,
+                opacity: 0.8,
+                color: [0, 0, 255]  // Blue
+            }
+        ];
+        
+        let gaussians = JSON.parse(JSON.stringify(defaultGaussians));
+        
+        // Helper function to convert RGB array to hex
+        function rgbToHex(rgb) {
+            return '#' + rgb.map(x => {
+                const hex = Math.round(x).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+        
+        // Helper function to convert hex to RGB array
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16),
+                parseInt(result[2], 16),
+                parseInt(result[3], 16)
+            ] : [255, 255, 255];
+        }
+        
+        // Create control UI for all Gaussians
+        function createGaussianControls() {
+            const container = document.getElementById('gaussianControls');
+            container.innerHTML = '';
+            
+            gaussians.forEach((gaussian, index) => {
+                const controlDiv = document.createElement('div');
+                controlDiv.className = 'gaussian-control';
+                controlDiv.innerHTML = `
+                    <div class="gaussian-header">
+                        <div class="gaussian-number">${index + 1}</div>
+                        <div class="gaussian-title">Gaussian ${index + 1}</div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Position X</label>
+                        <div class="slider-group">
+                            <input type="range" class="posX" min="-3" max="3" step="0.1" value="${gaussian.position[0]}">
+                            <span class="value-display posX-value">${gaussian.position[0].toFixed(1)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Position Y</label>
+                        <div class="slider-group">
+                            <input type="range" class="posY" min="-3" max="3" step="0.1" value="${gaussian.position[1]}">
+                            <span class="value-display posY-value">${gaussian.position[1].toFixed(1)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Position Z</label>
+                        <div class="slider-group">
+                            <input type="range" class="posZ" min="-3" max="3" step="0.1" value="${gaussian.position[2]}">
+                            <span class="value-display posZ-value">${gaussian.position[2].toFixed(1)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Scale</label>
+                        <div class="slider-group">
+                            <input type="range" class="scale" min="0.1" max="2.0" step="0.05" value="${gaussian.scale}">
+                            <span class="value-display scale-value">${gaussian.scale.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Opacity</label>
+                        <div class="slider-group">
+                            <input type="range" class="opacity" min="0.0" max="1.0" step="0.05" value="${gaussian.opacity}">
+                            <span class="value-display opacity-value">${gaussian.opacity.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Color</label>
+                        <input type="color" class="color" value="${rgbToHex(gaussian.color)}">
+                    </div>
+                `;
+                
+                container.appendChild(controlDiv);
+                
+                // Add event listeners
+                const posXSlider = controlDiv.querySelector('.posX');
+                const posYSlider = controlDiv.querySelector('.posY');
+                const posZSlider = controlDiv.querySelector('.posZ');
+                const scaleSlider = controlDiv.querySelector('.scale');
+                const opacitySlider = controlDiv.querySelector('.opacity');
+                const colorPicker = controlDiv.querySelector('.color');
+                
+                posXSlider.addEventListener('input', (e) => {
+                    gaussians[index].position[0] = parseFloat(e.target.value);
+                    controlDiv.querySelector('.posX-value').textContent = e.target.value;
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+                
+                posYSlider.addEventListener('input', (e) => {
+                    gaussians[index].position[1] = parseFloat(e.target.value);
+                    controlDiv.querySelector('.posY-value').textContent = e.target.value;
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+                
+                posZSlider.addEventListener('input', (e) => {
+                    gaussians[index].position[2] = parseFloat(e.target.value);
+                    controlDiv.querySelector('.posZ-value').textContent = e.target.value;
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+                
+                scaleSlider.addEventListener('input', (e) => {
+                    gaussians[index].scale = parseFloat(e.target.value);
+                    controlDiv.querySelector('.scale-value').textContent = parseFloat(e.target.value).toFixed(2);
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+                
+                opacitySlider.addEventListener('input', (e) => {
+                    gaussians[index].opacity = parseFloat(e.target.value);
+                    controlDiv.querySelector('.opacity-value').textContent = parseFloat(e.target.value).toFixed(2);
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+                
+                colorPicker.addEventListener('input', (e) => {
+                    gaussians[index].color = hexToRgb(e.target.value);
+                    if (document.getElementById('autoRender').checked) renderGaussians();
+                });
+            });
+        }
+        
+        // Camera controls
+        const cameraDistance = document.getElementById('cameraDistance');
+        const cameraAngleH = document.getElementById('cameraAngleH');
+        const cameraAngleV = document.getElementById('cameraAngleV');
+        
+        cameraDistance.addEventListener('input', (e) => {
+            document.getElementById('cameraDistanceValue').textContent = parseFloat(e.target.value).toFixed(1);
+            if (document.getElementById('autoRender').checked) renderGaussians();
+        });
+        
+        cameraAngleH.addEventListener('input', (e) => {
+            document.getElementById('cameraAngleHValue').textContent = e.target.value + '°';
+            if (document.getElementById('autoRender').checked) renderGaussians();
+        });
+        
+        cameraAngleV.addEventListener('input', (e) => {
+            document.getElementById('cameraAngleVValue').textContent = e.target.value + '°';
+            if (document.getElementById('autoRender').checked) renderGaussians();
+        });
+        
+        // Render function
+        async function renderGaussians() {
+            const renderButton = document.getElementById('renderButton');
+            const loading = document.getElementById('loading');
+            const canvas = document.getElementById('renderCanvas');
+            
+            renderButton.disabled = true;
+            loading.style.display = 'block';
+            
+            // Calculate camera position
+            const distance = parseFloat(cameraDistance.value);
+            const angleH = parseFloat(cameraAngleH.value) * Math.PI / 180;
+            const angleV = parseFloat(cameraAngleV.value) * Math.PI / 180;
+            
+            const cameraPos = [
+                distance * Math.cos(angleV) * Math.cos(angleH),
+                distance * Math.sin(angleV),
+                distance * Math.cos(angleV) * Math.sin(angleH)
+            ];
+            
+            try {
+                const response = await fetch('/api/render', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        gaussians: gaussians,
+                        camera: {
+                            width: 800,
+                            height: 600,
+                            position: cameraPos,
+                            lookAt: [0, 0, 0]
+                        }
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error rendering: ' + data.error);
+                } else {
+                    canvas.src = data.image;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to render: ' + error.message);
+            } finally {
+                renderButton.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        // Initialize
+        createGaussianControls();
+        document.getElementById('renderButton').addEventListener('click', renderGaussians);
+        
+        // Initial render
+        renderGaussians();
+    </script>
+</body>
+</html>
