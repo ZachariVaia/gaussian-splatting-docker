@@ -1,0 +1,14 @@
+# Requirements for Interactive Gaussian Splatting Viewer
+# Install with: pip install -r requirements_interactive_viewer.txt
+
+flask>=2.0.0
+pillow>=9.0.0
+numpy>=1.21.0
+
+# Note: PyTorch with CUDA support is required
+# Install separately based on your CUDA version from: https://pytorch.org/
+# Example for CUDA 11.8:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# The main Gaussian Splatting dependencies should already be installed
+# via the environment.yml or following the main repository setup instructions

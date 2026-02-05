@@ -2,6 +2,8 @@
 
 An easy-to-use, beautiful interactive web application for visualizing and manipulating 3D Gaussians with real-time rasterization.
 
+![Interactive Viewer Screenshot](https://github.com/user-attachments/assets/90e7385e-5afc-4485-b669-6e07dfdfd367)
+
 ## Features
 
 ✨ **Interactive Controls**
@@ -30,15 +32,37 @@ An easy-to-use, beautiful interactive web application for visualizing and manipu
 
 ## Installation
 
-1. Make sure you have the Gaussian Splatting environment set up:
+### Option 1: Using Conda Environment
+
+1. Set up the main Gaussian Splatting environment first (if not already done):
 ```bash
+conda env create --file environment.yml
 conda activate gaussian_splatting
 ```
 
-2. Install Flask if not already installed:
+2. Install additional dependencies for the interactive viewer:
 ```bash
-pip install flask
+pip install -r requirements_interactive_viewer.txt
 ```
+
+### Option 2: Using Docker
+
+If you're using Docker (as this repository supports), you can:
+
+1. Build the Docker image with the project
+2. Run the container with port mapping:
+```bash
+docker run -p 5000:5000 --gpus all <your-image-name> python interactive_viewer.py
+```
+
+### Quick Setup
+
+Simply run:
+```bash
+pip install flask pillow
+```
+
+Then start the viewer (see Usage section below).
 
 ## Usage
 

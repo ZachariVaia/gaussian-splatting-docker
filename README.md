@@ -65,6 +65,36 @@ The codebase has 4 main components:
 
 The components have different requirements w.r.t. both hardware and software. They have been tested on Windows 10 and Ubuntu Linux 22.04. Instructions for setting up and running each of them are found in the sections below.
 
+## 🎨 Interactive Gaussian Viewer (New!)
+
+We've added an easy-to-use **Interactive Gaussian Splatting Viewer** - a beautiful web-based tool for learning and experimenting with Gaussian Splatting!
+
+![Interactive Viewer](https://github.com/user-attachments/assets/90e7385e-5afc-4485-b669-6e07dfdfd367)
+
+### Features
+- 🎯 Place and manipulate 3 Gaussians in 3D space
+- 🎨 Adjust position, scale, opacity, and color for each Gaussian
+- 📷 Interactive camera controls
+- ⚡ Real-time GPU-accelerated rasterization
+- 💅 Beautiful, modern UI
+
+### Quick Start
+```bash
+# Install Flask (if not already installed)
+pip install flask pillow
+
+# Start the interactive viewer
+python interactive_viewer.py
+
+# Or use the startup script
+./start_interactive_viewer.sh  # Linux/Mac
+start_interactive_viewer.bat   # Windows
+```
+
+Then open your browser to `http://localhost:5000`
+
+For more details, see [INTERACTIVE_VIEWER_README.md](INTERACTIVE_VIEWER_README.md)
+
 ## Optimizer
 
 The optimizer uses PyTorch and CUDA extensions in a Python environment to produce trained models. 
